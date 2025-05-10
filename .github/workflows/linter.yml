@@ -1,0 +1,46 @@
+name: Lint Code Base
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Run Linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linters
+        run: |
+          pip install flake8
+          npm install -g eslint markdownlint-cli
+          sudo apt-get update && sudo apt-get install -y yamllint
+
+      - name: Run flake8 (Python)
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run ESLint (JavaScript/TypeScript)
+        run: |
+          if [ -f package.json ]; then
+            eslint . --ext .js,.jsx,.ts,.tsx || true
+          fi
+
+      - name: Run yamllint (YAML files)
+        run: |
+          yamllint . || true
+
+      - name: Run markdownlint (Markdown)
+        run: |
+          markdownlint "**/*.md" || true
